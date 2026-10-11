@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- A mobile hold no longer opens a covering popup when releasing the finger over a control moved by the selection bar. The selection bar stays above the thread list.
+
 ### Added
 
 - Configurable New thread and New project toolbar buttons with ordering, placement, and optional labels. New project adds a folder on a connected machine.

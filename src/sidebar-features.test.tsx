@@ -194,3 +194,42 @@ it("can disable holds while preserving Shift selection and configured layout", a
   fireEvent.click(a, { shiftKey: true });
   expect(screen.getByRole("region", { name: "Selected threads" })).toBeTruthy();
 });
+
+it("keeps mobile selection actions unobscured when the hold release lands on the project filter", async () => {
+  pointerEvents();
+  const slot = renderSlot(app.threadLists[0]!, { ...props, isCompactViewport: true }, { sidebarThreads: { status: "ready", threads: rows, projects: [] }, rpc });
+  const row = await screen.findByRole("link", { name: "thr_a" });
+  const filter = screen.getByRole("button", { name: "Project scope: All projects" });
+  vi.useFakeTimers();
+  fireEvent.pointerDown(row, { pointerId: 1, pointerType: "touch", button: 0 });
+  act(() => { vi.advanceTimersByTime(HOLD_TO_SELECT_MS); });
+  fireEvent.pointerUp(row, { pointerId: 1 });
+  // Inserting the selection bar moves this control under the stationary finger.
+  fireEvent.click(filter);
+  expect(filter.getAttribute("aria-expanded")).toBe("false");
+  expect(screen.getByRole("region", { name: "Selected threads" }).textContent).toContain("1 selected");
+  expect(slot.inspection.navigateCalls).toEqual([]);
+  // The next deliberate press must work normally.
+  fireEvent.pointerDown(filter, { pointerId: 2, pointerType: "touch", button: 0 });
+  fireEvent.pointerUp(filter, { pointerId: 2 });
+  fireEvent.click(filter);
+  expect(filter.getAttribute("aria-expanded")).toBe("true");
+});
+
+it("suppresses a hold release retargeted outside the sidebar without swallowing the next press", async () => {
+  pointerEvents();
+  renderSlot(app.threadLists[0]!, { ...props, isCompactViewport: true }, { sidebarThreads: { status: "ready", threads: rows, projects: [] }, rpc });
+  const row = await screen.findByRole("link", { name: "thr_a" });
+  const button = document.createElement("button");
+  const outsideClick = vi.fn(); button.onclick = outsideClick; document.body.append(button);
+  vi.useFakeTimers();
+  fireEvent.pointerDown(row, { pointerId: 1, pointerType: "touch", button: 0 });
+  act(() => { vi.advanceTimersByTime(HOLD_TO_SELECT_MS); });
+  fireEvent.pointerUp(row, { pointerId: 1 });
+  fireEvent.click(button);
+  expect(outsideClick).not.toHaveBeenCalled();
+  fireEvent.pointerDown(button, { pointerId: 2, button: 0 });
+  fireEvent.click(button);
+  expect(outsideClick).toHaveBeenCalledOnce();
+  button.remove();
+});

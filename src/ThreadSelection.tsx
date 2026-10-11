@@ -9,6 +9,24 @@ import type { LifecycleApi } from "./useLifecycle";
 
 const ROW_SELECTOR = "[data-sidebar-thread-id]";
 
+/** A hold moves rows when the toolbar appears, so release can hit another control. */
+function suppressHoldReleaseClick(): () => void {
+  const disarm = () => {
+    window.removeEventListener("click", suppress, true);
+    window.removeEventListener("pointerdown", disarm, true);
+  };
+  function suppress(event: globalThis.MouseEvent) {
+    disarm();
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+  window.addEventListener("click", suppress, true);
+  // If the browser cancels the compatibility click, the next intentional
+  // pointer press still works. Unmount and settings changes also disarm it.
+  window.addEventListener("pointerdown", disarm, true);
+  return disarm;
+}
+
 /** Read the rendered order: collapsed shelves and unloaded pages aren't selected. */
 export function visibleSelectionRows(root: HTMLElement): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(ROW_SELECTOR)].filter(row =>
@@ -44,10 +62,10 @@ export function ThreadSelection({ threads, lifecycle, activeThreadId, onNavigate
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
   const holdMode = useRef(false);
-  const suppressClick = useRef<string | null>(null);
+  const releaseClickCleanup = useRef<(() => void) | null>(null);
   const cancelHold = useRef<(() => void) | null>(null);
   const clear = () => { holdMode.current = false; anchorRef.current = null; setSelected(new Set()); };
-  useEffect(() => () => { cancelHold.current?.(); }, [holdToSelect]);
+  useEffect(() => () => { cancelHold.current?.(); releaseClickCleanup.current?.(); }, [holdToSelect]);
   useEffect(() => { if (!selected.size) holdMode.current = false; }, [selected.size]);
 
   useLayoutEffect(() => {
@@ -101,10 +119,6 @@ export function ThreadSelection({ threads, lifecycle, activeThreadId, onNavigate
   const click = (event: MouseEvent<HTMLDivElement>) => {
     const row = targetRow(event.target);
     if (!row || !rootRef.current?.contains(row)) return;
-    if (suppressClick.current === row.dataset.sidebarThreadId) {
-      suppressClick.current = null;
-      event.preventDefault(); event.stopPropagation(); return;
-    }
     const toggle = event.ctrlKey || event.metaKey;
     if (event.shiftKey || toggle || holdMode.current) {
       event.preventDefault(); event.stopPropagation();
@@ -115,8 +129,6 @@ export function ThreadSelection({ threads, lifecycle, activeThreadId, onNavigate
     }
   };
   const pointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    // A fresh press disarms a cancelled hold's trailing-click guard.
-    suppressClick.current = null;
     if (cancelHold.current) { cancelHold.current(); return; }
     const row = targetRow(event.target);
     if (!row || !rootRef.current?.contains(row)) return;
@@ -155,7 +167,8 @@ export function ThreadSelection({ threads, lifecycle, activeThreadId, onNavigate
       cancellingDrag = false;
       triggered = true;
       holdMode.current = true;
-      suppressClick.current = row.dataset.sidebarThreadId!;
+      releaseClickCleanup.current?.();
+      releaseClickCleanup.current = suppressHoldReleaseClick();
       select(row, false, true);
     }, HOLD_TO_SELECT_MS);
     cancelHold.current = cancel;
@@ -221,7 +234,7 @@ export function ThreadSelection({ threads, lifecycle, activeThreadId, onNavigate
       }
     }}>
     {selected.size > 0 ? <div role="region" aria-label="Selected threads" aria-busy={busy}
-      className="flex shrink-0 flex-col gap-0.5 border-b border-sidebar-border px-2 py-1">
+      className="sticky top-0 z-20 flex shrink-0 flex-col gap-0.5 border-b border-sidebar-border bg-sidebar px-2 py-1">
       <div className="flex items-center justify-between gap-2">
       <span role="status" className="text-xs text-foreground">{busy ? "Applying…" : `${selected.size} selected`}</span>
       <Tooltip label="Clear selection (Escape)"><button type="button" aria-label="Clear selection" disabled={busy} onClick={clear}
