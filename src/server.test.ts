@@ -1,3 +1,4 @@
+import { DEFAULT_SIDEBAR_LAYOUT } from "./sidebar-layout";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost as createHost,
@@ -568,6 +569,8 @@ describe("lifecycle RPC", () => {
       projectColorsEnabled: false,
       projectColorDisplay: "all",
       quickActionKeys: [],
+      sidebarQuickActions: ["new-thread", "new-project"],
+      layout: { ...DEFAULT_SIDEBAR_LAYOUT },
     });
     await expect(
       harness.behavior.callRpc("updateSidebarSettings", {
@@ -604,6 +607,8 @@ describe("lifecycle RPC", () => {
       projectColorsEnabled: true,
       projectColorDisplay: "grouped",
       quickActionKeys: [],
+      sidebarQuickActions: ["new-thread", "new-project"],
+      layout: { ...DEFAULT_SIDEBAR_LAYOUT },
     });
     // A client that predates the setting leaves it out and must not reset it.
     await expect(
@@ -717,6 +722,8 @@ describe("lifecycle RPC", () => {
       projectColorsEnabled: false,
       projectColorDisplay: "all",
       quickActionKeys: [],
+      sidebarQuickActions: ["new-thread", "new-project"],
+      layout: { ...DEFAULT_SIDEBAR_LAYOUT },
     });
   });
 
@@ -2818,4 +2825,18 @@ it("persists ordered quick actions and preserves them on unrelated settings edit
     await expect(harness.behavior.callRpc("updateSidebarSettings", { quickActionKeys: invalid }))
       .rejects.toThrow("rpc input validation failed");
   }
+});
+
+it("persists layout and creation actions without resetting other preferences", async () => {
+  const harness = await loadPlugin();
+  const layout = { ...DEFAULT_SIDEBAR_LAYOUT, density: "compact", showPorts: false, quickActionPlacement: "bottom" };
+  await harness.behavior.callRpc("updateSidebarSettings", { layout, sidebarQuickActions: ["new-project", "new-thread"] });
+  await harness.behavior.callRpc("updateSidebarSettings", { quickActionKeys: ["bb--core/pin"] });
+  await expect(harness.behavior.callRpc("getSidebarSettings", {})).resolves.toMatchObject({
+    layout, sidebarQuickActions: ["new-project", "new-thread"], quickActionKeys: ["bb--core/pin"], autoSettleInactive: true,
+  });
+  for (const input of [{ layout: { ...layout, density: "invalid" } }, { sidebarQuickActions: ["unknown"] }, { sidebarQuickActions: ["new-thread", "new-thread"] }]) {
+    await expect(harness.behavior.callRpc("updateSidebarSettings", input)).rejects.toThrow("rpc input validation failed");
+  }
+  await expect(harness.behavior.callRpc("updateSidebarSettings", { sidebarQuickActions: [] })).resolves.toMatchObject({ sidebarQuickActions: [], layout });
 });

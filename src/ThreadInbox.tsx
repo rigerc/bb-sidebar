@@ -1,3 +1,4 @@
+import { SidebarQuickActions } from "./SidebarQuickActions";
 import { useThreadOperations } from "./useThreadOperations";
 import {
   useCallback,
@@ -1510,10 +1511,18 @@ export function ThreadInbox({
     <OpenPortsProvider>
     <JumpHintsContext.Provider value={jumpHints}>
     <QuickActionsContext.Provider value={sidebarSettings?.quickActionKeys ?? DEFAULT_SIDEBAR_SETTINGS.quickActionKeys}>
-    <ThreadSelection threads={threads} lifecycle={lifecycle} activeThreadId={activeThreadId} onNavigate={onNavigate}>
-      <div ref={jumpHintsRootRef} data-bb-sidebar-root="" className="flex min-h-0 flex-1 flex-col">
-        {/* The one control the host has no equivalent for. Everything else in
-            the chrome above — New thread, search — is bb's and stays bb's. */}
+    <ThreadSelection threads={threads} lifecycle={lifecycle} activeThreadId={activeThreadId} onNavigate={onNavigate} holdToSelect={sidebarSettings?.layout.holdToSelect ?? true}>
+      <div ref={jumpHintsRootRef} data-bb-sidebar-root=""
+        data-density={sidebarSettings?.layout.density ?? "standard"}
+        data-show-location={sidebarSettings?.layout.showLocation ?? true}
+        data-show-provider={sidebarSettings?.layout.showProvider ?? true}
+        data-show-ports={sidebarSettings?.layout.showPorts ?? true}
+        data-row-actions={sidebarSettings?.layout.rowActionsVisibility ?? "hover"} className="flex min-h-0 flex-1 flex-col">
+        {(sidebarSettings?.layout.quickActionPlacement ?? "top") === "top" ? <SidebarQuickActions
+          actions={sidebarSettings?.sidebarQuickActions ?? DEFAULT_SIDEBAR_SETTINGS.sidebarQuickActions}
+          layout={sidebarSettings?.layout ?? DEFAULT_SIDEBAR_SETTINGS.layout}
+          projectId={scope === ALL_PROJECTS ? undefined : scope} onNavigate={onNavigate} /> : null}
+        {(sidebarSettings?.layout.showProjectFilter ?? true) || scope !== ALL_PROJECTS ? (
         <div className="flex shrink-0 items-center gap-1 px-2 pb-1">
           <ProjectScopeSelect
             scope={scope}
@@ -1521,7 +1530,7 @@ export function ThreadInbox({
             projectIconRevision={projectIconRevision}
             onScopeChange={setScope}
           />
-        </div>
+        </div>) : null}
 
         <p role="status" aria-live="polite" className="sr-only">
           {reorderAnnouncement}
@@ -1788,6 +1797,9 @@ export function ThreadInbox({
             />
           )}
         </div>
+        {sidebarSettings?.layout.quickActionPlacement === "bottom" ? <SidebarQuickActions
+          actions={sidebarSettings.sidebarQuickActions} layout={sidebarSettings.layout}
+          projectId={scope === ALL_PROJECTS ? undefined : scope} onNavigate={onNavigate} /> : null}
       </div>
     </ThreadSelection>
     </QuickActionsContext.Provider>

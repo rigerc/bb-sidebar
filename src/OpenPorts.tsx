@@ -221,6 +221,7 @@ export function OpenPortsIndicator({ thread }: { thread: PluginSidebarThread }) 
     <span
       role="img"
       aria-label="Open ports started by this thread"
+      data-sidebar-ports=""
       className="pointer-events-none relative flex shrink-0 items-center text-muted-foreground/60"
     >
       <Icon name="Plug" aria-hidden className="size-3" />

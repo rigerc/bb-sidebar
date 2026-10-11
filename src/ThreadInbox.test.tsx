@@ -4998,9 +4998,10 @@ describe("ThreadInbox", () => {
     expect(screen.queryByLabelText("Search threads")).toBeNull();
   });
 
-  it("ships no new-thread button of its own", () => {
+  it("ships configurable creation quick actions", () => {
     render([thread({ id: "a" })]);
-    expect(screen.queryByLabelText("New thread")).toBeNull();
+    expect(screen.getByRole("button", { name: "New thread" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "New project" })).toBeTruthy();
   });
 
   it("scopes to one project", () => {

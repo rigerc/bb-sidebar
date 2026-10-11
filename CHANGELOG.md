@@ -4,7 +4,10 @@
 
 ### Added
 
-- Up to four configurable sidebar quick buttons, using bb's registered thread actions and plugin choice pickers.
+- Configurable New thread and New project toolbar buttons with ordering, placement, and optional labels. New project adds a folder on a connected machine.
+- Compact, standard, or spacious thread spacing; visibility settings for the project filter, branch/machine details, provider icons, and port indicators.
+- Press-and-hold selection mode with tap/click toggles, gesture cancellation, and a setting to disable holds.
+- Up to four configurable thread row actions, using bb's registered actions and plugin choice pickers, with hover or always-visible display.
 - Shift-click range selection, Ctrl/Cmd-click toggles, keyboard selection, and bulk pin, unpin, read/unread, park, and settle controls.
 - Asciimoji-compatible title placement in full cards, compact rows, search results, and visible sidebar descendants.
 - Optional project colors, disabled by default. Each project gets an automatic color based on its ID, with a custom color picker and reset control in Settings > Project appearance. Project groups share one continuous stripe; ungrouped rows have their own stripe.

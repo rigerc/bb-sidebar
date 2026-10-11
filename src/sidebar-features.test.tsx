@@ -1,18 +1,18 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
 import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
 import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
 import { idleSidebarThreadFields } from "./test-fixtures";
 import { DEFAULT_SIDEBAR_SETTINGS, quickActionKeysOf } from "./sidebar-settings";
-import { threadRange } from "./ThreadSelection";
+import { HOLD_TO_SELECT_MS, threadRange } from "./ThreadSelection";
 
 const app = await loadPluginApp(() => import("../app"));
 const props = { activeThreadId: null, activeProjectId: null, isCompactViewport: false, searchQuery: "", onNavigate: vi.fn() };
 const errors = vi.hoisted(() => vi.fn());
 vi.mock("sonner", () => ({ toast: { error: errors, success: vi.fn(), message: vi.fn() } }));
-afterEach(() => { cleanup(); localStorage.clear(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); localStorage.clear(); vi.clearAllMocks(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 function thread(id: string): PluginSidebarThread {
   return { ...idleSidebarThreadFields, id, projectId: "proj_1", title: id, titleFallback: null,
@@ -129,4 +129,68 @@ it("bounds cached quick-action keys and handles missing range anchors", () => {
   expect(quickActionKeysOf(["p/a", "p/a", null, "bad", "p/b", "p/c", "p/d", "p/e"])).toEqual(["p/a", "p/b", "p/c", "p/d"]);
   expect(threadRange(["a", "b", "c"], "c", "a")).toEqual(["a", "b", "c"]);
   expect(threadRange(["a", "b"], "gone", "b")).toEqual(["b"]);
+});
+
+function pointerEvents() {
+  vi.stubGlobal("PointerEvent", class extends MouseEvent {
+    pointerId: number; pointerType: string; isPrimary: boolean;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init); this.pointerId = init.pointerId ?? 1;
+      this.pointerType = init.pointerType ?? "touch"; this.isPrimary = init.isPrimary ?? true;
+    }
+  });
+}
+
+it("holds to enter selection mode, suppresses the release click, and toggles subsequent taps", async () => {
+  pointerEvents();
+  const slot = renderSlot(app.threadLists[0]!, props, { sidebarThreads: { status: "ready", threads: rows, projects: [] }, rpc });
+  const a = await screen.findByRole("link", { name: "thr_a" });
+  vi.useFakeTimers();
+  fireEvent.pointerDown(a, { pointerId: 1, pointerType: "touch", button: 0 });
+  act(() => { vi.advanceTimersByTime(HOLD_TO_SELECT_MS); });
+  expect(screen.getByRole("region", { name: "Selected threads" }).textContent).toContain("1 selected");
+  fireEvent.pointerUp(a, { pointerId: 1 }); fireEvent.click(a);
+  expect(screen.getByRole("region", { name: "Selected threads" }).textContent).toContain("1 selected");
+  const b = screen.getByRole("link", { name: "thr_b" });
+  fireEvent.pointerDown(b, { pointerId: 2, pointerType: "touch", button: 0 });
+  fireEvent.pointerUp(b, { pointerId: 2 }); fireEvent.click(b);
+  expect(screen.getByRole("region", { name: "Selected threads" }).textContent).toContain("2 selected");
+  expect(slot.inspection.navigateCalls).toEqual([]);
+  fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
+  fireEvent.click(b);
+  expect(slot.inspection.navigateCalls).toEqual([{ method: "toThread", threadId: "thr_b", options: { split: false } }]);
+});
+
+it.each(["movement", "scroll", "cancel", "release", "second pointer", "blur"])("cancels a pending hold on %s", async reason => {
+  pointerEvents();
+  renderSlot(app.threadLists[0]!, props, { sidebarThreads: { status: "ready", threads: rows, projects: [] }, rpc });
+  const a = await screen.findByRole("link", { name: "thr_a" });
+  vi.useFakeTimers();
+  fireEvent.pointerDown(a, { pointerId: 1, pointerType: "touch", button: 0, clientX: 20, clientY: 20 });
+  if (reason === "movement") fireEvent.pointerMove(window, { pointerId: 1, clientX: 20, clientY: 27 });
+  if (reason === "scroll") fireEvent.scroll(a.parentElement!);
+  if (reason === "cancel") fireEvent.pointerCancel(window, { pointerId: 1 });
+  if (reason === "release") fireEvent.pointerUp(window, { pointerId: 1 });
+  if (reason === "second pointer") fireEvent.pointerDown(a, { pointerId: 2, pointerType: "touch", isPrimary: false });
+  if (reason === "blur") fireEvent.blur(window);
+  act(() => { vi.advanceTimersByTime(HOLD_TO_SELECT_MS + 100); });
+  expect(screen.queryByRole("region", { name: "Selected threads" })).toBeNull();
+});
+
+it("can disable holds while preserving Shift selection and configured layout", async () => {
+  pointerEvents();
+  renderSlot(app.threadLists[0]!, props, { sidebarThreads: { status: "ready", threads: rows, projects: [] }, rpc: {
+    ...rpc, getSidebarSettings: () => ({ ...DEFAULT_SIDEBAR_SETTINGS, inactiveThreadsEnabled: false, sidebarQuickActions: [], layout: {
+      ...DEFAULT_SIDEBAR_SETTINGS.layout, density: "spacious", holdToSelect: false, showProjectFilter: false, showProvider: false,
+    } }),
+  } });
+  const a = await screen.findByRole("link", { name: "thr_a" });
+  await waitFor(() => expect(document.querySelector("[data-bb-sidebar-root]")?.getAttribute("data-density")).toBe("spacious"));
+  expect(screen.queryByRole("toolbar", { name: "Sidebar quick actions" })).toBeNull();
+  vi.useFakeTimers();
+  fireEvent.pointerDown(a, { pointerId: 1, pointerType: "touch", button: 0 });
+  act(() => { vi.advanceTimersByTime(HOLD_TO_SELECT_MS); });
+  expect(screen.queryByRole("region", { name: "Selected threads" })).toBeNull();
+  fireEvent.click(a, { shiftKey: true });
+  expect(screen.getByRole("region", { name: "Selected threads" })).toBeTruthy();
 });

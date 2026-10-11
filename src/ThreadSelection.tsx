@@ -1,5 +1,5 @@
 import { useThreadOperations } from "./useThreadOperations";
-import { useLayoutEffect, useRef, useState, type ReactNode, type MouseEvent, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type MouseEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { useSdk, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon, type IconName } from "./components/Icon";
@@ -24,11 +24,14 @@ export function threadRange(ids: readonly string[], anchor: string | null, targe
   return ids.slice(Math.min(start, end), Math.max(start, end) + 1);
 }
 
-export function ThreadSelection({ threads, lifecycle, activeThreadId, onNavigate, children }: {
+export const HOLD_TO_SELECT_MS = 500;
+
+export function ThreadSelection({ threads, lifecycle, activeThreadId, onNavigate, holdToSelect = true, children }: {
   threads: readonly PluginSidebarThread[];
   lifecycle: LifecycleApi;
   activeThreadId: string | null;
   onNavigate: () => void;
+  holdToSelect?: boolean;
   children: ReactNode;
 }) {
   const sdk = useSdk();
@@ -40,7 +43,12 @@ export function ThreadSelection({ threads, lifecycle, activeThreadId, onNavigate
   const busyRef = useRef(false);
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
-  const clear = () => { anchorRef.current = null; setSelected(new Set()); };
+  const holdMode = useRef(false);
+  const suppressClick = useRef<string | null>(null);
+  const cancelHold = useRef<(() => void) | null>(null);
+  const clear = () => { holdMode.current = false; anchorRef.current = null; setSelected(new Set()); };
+  useEffect(() => () => { cancelHold.current?.(); }, [holdToSelect]);
+  useEffect(() => { if (!selected.size) holdMode.current = false; }, [selected.size]);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -93,14 +101,70 @@ export function ThreadSelection({ threads, lifecycle, activeThreadId, onNavigate
   const click = (event: MouseEvent<HTMLDivElement>) => {
     const row = targetRow(event.target);
     if (!row || !rootRef.current?.contains(row)) return;
+    if (suppressClick.current === row.dataset.sidebarThreadId) {
+      suppressClick.current = null;
+      event.preventDefault(); event.stopPropagation(); return;
+    }
     const toggle = event.ctrlKey || event.metaKey;
-    if (event.shiftKey || toggle) {
+    if (event.shiftKey || toggle || holdMode.current) {
       event.preventDefault(); event.stopPropagation();
-      select(row, event.shiftKey, toggle);
+      select(row, event.shiftKey, toggle || holdMode.current);
     } else {
       anchorRef.current = row.dataset.sidebarThreadId!;
       setSelected(new Set());
     }
+  };
+  const pointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    // A fresh press disarms a cancelled hold's trailing-click guard.
+    suppressClick.current = null;
+    if (cancelHold.current) { cancelHold.current(); return; }
+    const row = targetRow(event.target);
+    if (!row || !rootRef.current?.contains(row)) return;
+    if (event.shiftKey || event.ctrlKey || event.metaKey || holdMode.current) {
+      event.stopPropagation(); return;
+    }
+    if (!holdToSelect || busyRef.current || event.button !== 0 || event.isPrimary === false) return;
+    // Claim touch early so the row context menu's own long-press timer cannot
+    // compete. Mouse movement still reaches the existing reorder/split hooks.
+    if (event.pointerType === "touch") event.stopPropagation();
+    const { pointerId, clientX, clientY } = event;
+    let triggered = false;
+    let cancellingDrag = false;
+    const cancel = () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pointermove", move, true);
+      window.removeEventListener("pointerup", end, true);
+      window.removeEventListener("pointercancel", end, true);
+      window.removeEventListener("pointerdown", cancel, true);
+      window.removeEventListener("scroll", cancel, true);
+      window.removeEventListener("blur", cancel);
+      cancelHold.current = null;
+    };
+    const move = (next: PointerEvent) => {
+      if (next.pointerId !== pointerId) return;
+      if (triggered) { next.preventDefault(); next.stopPropagation(); }
+      else if (Math.hypot(next.clientX - clientX, next.clientY - clientY) >= 6) cancel();
+    };
+    const end = (next: PointerEvent) => { if (next.pointerId === pointerId && !cancellingDrag) cancel(); };
+    const timer = window.setTimeout(() => {
+      if (!row.isConnected || !visibleSelectionRows(rootRef.current!).includes(row) || busyRef.current) { cancel(); return; }
+      // Cancel the host's pending drag and Radix context-menu gesture before
+      // turning this stationary press into selection.
+      cancellingDrag = true;
+      row.dispatchEvent(new PointerEvent("pointercancel", { bubbles: true, pointerId }));
+      cancellingDrag = false;
+      triggered = true;
+      holdMode.current = true;
+      suppressClick.current = row.dataset.sidebarThreadId!;
+      select(row, false, true);
+    }, HOLD_TO_SELECT_MS);
+    cancelHold.current = cancel;
+    window.addEventListener("pointermove", move, { capture: true, passive: false });
+    window.addEventListener("pointerup", end, true);
+    window.addEventListener("pointercancel", end, true);
+    window.addEventListener("pointerdown", cancel, true);
+    window.addEventListener("scroll", cancel, true);
+    window.addEventListener("blur", cancel);
   };
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target instanceof Element && event.target.closest("input, textarea, select, [contenteditable='true']")) return;
@@ -145,11 +209,14 @@ export function ThreadSelection({ threads, lifecycle, activeThreadId, onNavigate
       onClick={() => void run(label, task, moves)}><Icon name={icon} className="size-3.5" aria-hidden="true" /></button></Tooltip>;
 
   return <div ref={rootRef} className="flex min-h-0 flex-1 flex-col" onClickCapture={click} onKeyDownCapture={keyDown}
-    onPointerDownCapture={event => {
-      if (targetRow(event.target) && (event.shiftKey || event.ctrlKey || event.metaKey)) event.stopPropagation();
+    onPointerDownCapture={pointerDown}
+    onContextMenuCapture={event => {
+      if (targetRow(event.target) && (holdMode.current || cancelHold.current)) {
+        event.preventDefault(); event.stopPropagation();
+      }
     }}
     onDoubleClickCapture={event => {
-      if (targetRow(event.target) && (event.shiftKey || event.ctrlKey || event.metaKey)) {
+      if (targetRow(event.target) && (event.shiftKey || event.ctrlKey || event.metaKey || holdMode.current)) {
         event.preventDefault(); event.stopPropagation();
       }
     }}>

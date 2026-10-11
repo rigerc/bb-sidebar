@@ -45,7 +45,7 @@ export function ProviderGlyph({
   if (logoUrl) {
     const maskStyle = providerMaskStyle(logoUrl);
     return (
-      <span role="img" aria-label={label} className={box}>
+      <span data-sidebar-provider="" role="img" aria-label={label} className={box}>
         {tint ? (
           <>
             <span
@@ -71,7 +71,7 @@ export function ProviderGlyph({
   }
 
   return (
-    <span role="img" aria-label={label} className={box}>
+    <span data-sidebar-provider="" role="img" aria-label={label} className={box}>
       <span className="size-2 rounded-full bg-muted-foreground/50" />
     </span>
   );

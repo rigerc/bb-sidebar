@@ -14,7 +14,8 @@ A stable thread list for [bb](https://github.com/get-bb/bb). Threads stay where 
 - Subtle project grouping for projects with multiple active threads
 - Pinned, Active, Inactive, Snoozed, Parked, and Settled shelves
 - Project filtering
-- Configurable sidebar quick buttons, including actions from installed plugins
+- Configurable New thread and New project buttons, plus optional thread row actions
+- Sidebar spacing, visible details, toolbar placement, and press-and-hold selection settings
 - Shift-click range selection, Ctrl/Cmd-click individual selection, and bulk pin, read/unread, park, and settle actions
 - Asciimoji faces and pickers beside sidebar titles when the Asciimoji plugin is enabled
 - Optional project colors with per-project color selection. Names stay colored in every mode; show stripes in full and collapsed mode, full mode only, or grouped projects only
@@ -43,12 +44,25 @@ plugin-owned shelf and ordering settings.
 
 ## Quick buttons and selection
 
-Under **Settings > Plugins > BB Sidebar > Sidebar layout**, choose up to four
-**Sidebar quick buttons**. Their order is saved automatically. Buttons appear on
-hover or keyboard focus on desktop and stay visible on touch devices. Choice
-actions such as Notifications open a picker; archive and delete retain bb's
-confirmation dialogs. Unavailable plugin actions are skipped until their plugin
-is enabled again.
+Under **Settings > Plugins > BB Sidebar > Sidebar layout**, choose **Sidebar quick
+actions** to show New thread, New project, or both, in your preferred order. New
+thread opens the composer in the selected project scope. New project adds an
+existing folder on a connected machine to BB. Place the toolbar at the top or
+bottom, and show labels or icons only.
+
+Choose compact, standard, or spacious thread spacing; toggle the project filter,
+branch and machine details, provider icons, and open port indicators. An active
+project filter remains visible so you can clear it.
+
+**Thread row actions** configures up to four host/plugin actions beside each row.
+Choose whether they appear on hover or stay visible. Touch devices always show
+them. Choice actions open a picker; archive and delete retain bb's confirmation
+dialogs. Unavailable plugin actions are skipped until their plugin is enabled.
+
+**Hold to select** is enabled by default. Hold a thread for half a second, then
+tap or click other threads to toggle them without opening them. Moving, scrolling,
+or releasing before the hold completes cancels the gesture. Clear selection or
+press **Escape** to return to opening threads normally.
 
 Click a thread, then hold **Shift** and click another to select the visible range.
 **Ctrl/Cmd-click** toggles individual threads; **Ctrl/Cmd-Shift-click** adds a range.

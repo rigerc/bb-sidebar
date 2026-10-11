@@ -527,7 +527,7 @@ export function ThreadCard({
               {/* A thread without a worktree still runs somewhere, so the
                   machine takes the branch's place rather than leaving the line
                   blank. */}
-              <ThreadLocation thread={thread} />
+              <span data-sidebar-location="" className="flex min-w-0 flex-1"><ThreadLocation thread={thread} /></span>
               <OpenPortsIndicator thread={thread} />
               {childThreads.length > 0 ? (
                 <ChildThreadBadge

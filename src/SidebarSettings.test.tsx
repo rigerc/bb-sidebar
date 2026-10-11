@@ -149,3 +149,23 @@ it("keeps the typing debounce when an earlier settings save finishes", async () 
   await act(async () => { await vi.advanceTimersByTimeAsync(1); });
   expect(writes).toEqual([{ workingShelf: true }, { autoSettleAfterDays: 12 }]);
 });
+
+it("autosaves layout choices and creation buttons together", async () => {
+  let stored = { ...DEFAULT_SIDEBAR_SETTINGS };
+  const writes: Partial<SidebarSettingsValues>[] = [];
+  renderSlot({ component: SidebarSettings }, {}, { rpc: {
+    ...extraRpc, getSidebarSettings: () => stored,
+    updateSidebarSettings: input => {
+      writes.push(input as Partial<SidebarSettingsValues>);
+      stored = { ...stored, ...input as Partial<SidebarSettingsValues> }; return stored;
+    },
+  } });
+  await screen.findByRole("combobox", { name: "Thread spacing" });
+  vi.useFakeTimers();
+  fireEvent.change(screen.getByRole("combobox", { name: "Thread spacing" }), { target: { value: "compact" } });
+  fireEvent.click(screen.getByRole("switch", { name: "Provider icons" }));
+  fireEvent.change(screen.getByRole("combobox", { name: "Quick action placement" }), { target: { value: "bottom" } });
+  fireEvent.change(screen.getByRole("combobox", { name: "Sidebar quick action 1" }), { target: { value: "" } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+  expect(writes).toEqual([{ layout: { ...DEFAULT_SIDEBAR_SETTINGS.layout, density: "compact", showProvider: false, quickActionPlacement: "bottom" }, sidebarQuickActions: ["new-project"] }]);
+});

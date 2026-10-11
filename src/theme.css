@@ -305,3 +305,29 @@
     opacity: 1;
   }
 }
+
+/* Sidebar layout preferences stay scoped to this thread list. */
+[data-bb-sidebar-root][data-show-location="false"] [data-sidebar-location],
+[data-bb-sidebar-root][data-show-provider="false"] [data-sidebar-provider],
+[data-bb-sidebar-root][data-show-ports="false"] [data-sidebar-ports] {
+  display: none;
+}
+[data-bb-sidebar-root][data-density="compact"] [data-thread-row] {
+  height: auto;
+  min-height: 28px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+[data-bb-sidebar-root][data-density="spacious"] [data-thread-row] {
+  height: auto;
+  min-height: 40px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+[data-bb-sidebar-root][data-row-actions="always"] .bb-sidebar-quick-actions {
+  opacity: 1;
+}
+[data-bb-sidebar-root] [data-sidebar-thread-id] {
+  -webkit-touch-callout: none;
+  user-select: none;
+}

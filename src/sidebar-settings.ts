@@ -1,3 +1,4 @@
+import { DEFAULT_SIDEBAR_LAYOUT, DEFAULT_SIDEBAR_QUICK_ACTIONS, sidebarLayoutOf, sidebarQuickActionsOf, type SidebarLayout, type SidebarQuickAction } from "./sidebar-layout";
 export const SIDEBAR_SETTINGS_CHANNEL = "sidebar-settings";
 
 export const CHILD_THREAD_SORT_FIELDS = ["created", "activity"] as const;
@@ -39,6 +40,8 @@ export interface SidebarSettingsValues {
   projectColorDisplay: ProjectColorDisplay;
   /** Ordered host/plugin action keys shown beside each sidebar row. */
   quickActionKeys: string[];
+  sidebarQuickActions: SidebarQuickAction[];
+  layout: SidebarLayout;
 }
 
 import { safeSetItem } from "./lib/safe-storage";
@@ -61,6 +64,8 @@ export const DEFAULT_SIDEBAR_SETTINGS: SidebarSettingsValues = {
   projectColorsEnabled: false,
   projectColorDisplay: "all",
   quickActionKeys: [],
+  sidebarQuickActions: [...DEFAULT_SIDEBAR_QUICK_ACTIONS],
+  layout: { ...DEFAULT_SIDEBAR_LAYOUT },
 };
 
 export const MAX_QUICK_ACTIONS = 4;
@@ -134,7 +139,8 @@ const settingsByRpcClient = new WeakMap<object, SidebarSettingsValues>();
 function currentSettingsOnly(value: SidebarSettingsValues): SidebarSettingsValues {
   return { ...Object.fromEntries(Object.keys(DEFAULT_SIDEBAR_SETTINGS).map((key) => [
     key, value[key as keyof SidebarSettingsValues] ?? DEFAULT_SIDEBAR_SETTINGS[key as keyof SidebarSettingsValues],
-  ])) as unknown as SidebarSettingsValues, quickActionKeys: quickActionKeysOf(value.quickActionKeys) };
+  ])) as unknown as SidebarSettingsValues, quickActionKeys: quickActionKeysOf(value.quickActionKeys),
+    sidebarQuickActions: sidebarQuickActionsOf(value.sidebarQuickActions), layout: sidebarLayoutOf(value.layout) };
 }
 
 function readStoredSidebarSettings(): SidebarSettingsValues | null {

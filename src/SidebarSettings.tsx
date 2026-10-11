@@ -1,3 +1,4 @@
+import { SIDEBAR_QUICK_ACTIONS, type SidebarQuickAction, type SidebarLayout } from "./sidebar-layout";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
 import { toast } from "sonner";
@@ -91,6 +92,8 @@ const SECTION_BY_SETTING: Record<keyof SidebarSettingsValues, string> = {
   projectColorsEnabled: "Project appearance",
   projectColorDisplay: "Project appearance",
   quickActionKeys: "Sidebar layout",
+  sidebarQuickActions: "Sidebar layout",
+  layout: "Sidebar layout",
 };
 
 const validHours = (value: number) => Number.isInteger(value) && value >= MIN_INACTIVE_AFTER_HOURS && value <= MAX_INACTIVE_AFTER_HOURS;
@@ -280,11 +283,43 @@ export function SidebarSettings() {
     );
   }
 
+  const updateLayout = <Key extends keyof SidebarLayout>(key: Key, value: SidebarLayout[Key]) =>
+    update("layout", { ...draft.layout, [key]: value });
+
   return (
     <div className="max-w-3xl space-y-8 pb-4">
       <SettingsNavigation sections={SETTINGS_SECTIONS} />
       <SettingsSection title="Sidebar layout" status={statusFor("Sidebar layout")}>
-        <SettingRow title="Sidebar quick buttons" description="Choose up to four thread actions, in order. Actions from installed plugins are included. Changes save automatically.">
+        <SettingRow title="Sidebar quick actions" description="Choose the creation buttons and their order. New thread uses the selected project filter.">
+          <div className="flex flex-wrap gap-2">
+            {[0, 1].map(index => <SettingsSelect key={index} aria-label={`Sidebar quick action ${index + 1}`} value={draft.sidebarQuickActions[index] ?? ""}
+              onChange={event => {
+                const next = [...draft.sidebarQuickActions];
+                next[index] = event.target.value as SidebarQuickAction;
+                update("sidebarQuickActions", next.filter(Boolean));
+              }}>
+              <option value="">None</option>
+              {SIDEBAR_QUICK_ACTIONS.filter(key => key === draft.sidebarQuickActions[index] || !draft.sidebarQuickActions.includes(key)).map(key =>
+                <option key={key} value={key}>{key === "new-thread" ? "New thread" : "New project"}</option>)}
+            </SettingsSelect>)}
+          </div>
+        </SettingRow>
+        <SettingRow title="Quick action placement" control={<SettingsSelect aria-label="Quick action placement" value={draft.layout.quickActionPlacement} onChange={event => updateLayout("quickActionPlacement", event.target.value as SidebarLayout["quickActionPlacement"])}>
+          <option value="top">Top of sidebar</option><option value="bottom">Bottom of sidebar</option>
+        </SettingsSelect>} />
+        <SettingRow title="Quick action labels" description="Show button text alongside icons." control={<Switch label="Quick action labels" checked={draft.layout.quickActionLabels} onChange={value => updateLayout("quickActionLabels", value)} />} />
+        <SettingRow title="Thread spacing" control={<SettingsSelect aria-label="Thread spacing" value={draft.layout.density} onChange={event => updateLayout("density", event.target.value as SidebarLayout["density"])}>
+          <option value="compact">Compact</option><option value="standard">Standard</option><option value="spacious">Spacious</option>
+        </SettingsSelect>} />
+        <SettingRow title="Project filter" description="Hide the filter when all projects are selected. An active filter stays visible so you can clear it." control={<Switch label="Project filter" checked={draft.layout.showProjectFilter} onChange={value => updateLayout("showProjectFilter", value)} />} />
+        <SettingRow title="Branch and machine details" control={<Switch label="Branch and machine details" checked={draft.layout.showLocation} onChange={value => updateLayout("showLocation", value)} />} />
+        <SettingRow title="Provider icons" control={<Switch label="Provider icons" checked={draft.layout.showProvider} onChange={value => updateLayout("showProvider", value)} />} />
+        <SettingRow title="Open port indicators" control={<Switch label="Open port indicators" checked={draft.layout.showPorts} onChange={value => updateLayout("showPorts", value)} />} />
+        <SettingRow title="Hold to select" description="Hold a thread for half a second, then tap other threads to add or remove them. Clear selection or press Escape to exit. Shift-click selects a range." control={<Switch label="Hold to select" checked={draft.layout.holdToSelect} onChange={value => updateLayout("holdToSelect", value)} />} />
+        <SettingRow title="Thread row action visibility" control={<SettingsSelect aria-label="Thread row action visibility" value={draft.layout.rowActionsVisibility} onChange={event => updateLayout("rowActionsVisibility", event.target.value as SidebarLayout["rowActionsVisibility"])}>
+          <option value="hover">On hover or keyboard focus</option><option value="always">Always visible</option>
+        </SettingsSelect>} />
+        <SettingRow title="Thread row actions" description="Choose up to four actions beside each thread. Actions from installed plugins are included.">
           <QuickActionSettings keys={draft.quickActionKeys} onChange={keys => update("quickActionKeys", keys)} />
         </SettingRow>
         <SettingRow

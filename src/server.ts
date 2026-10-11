@@ -1,3 +1,4 @@
+import { SIDEBAR_QUICK_ACTIONS, sidebarLayoutOf, sidebarQuickActionsOf } from "./sidebar-layout";
 // BB Sidebar backend: the settled and snoozed store.
 //
 // This state lives in the plugin's own SQLite database, never on bb's thread.
@@ -57,6 +58,10 @@ import { PROJECT_COLORS_CHANNEL } from "./project-colors";
 function readQuickActionKeys(value: string): string[] {
   try { return quickActionKeysOf(JSON.parse(value)); }
   catch { return []; }
+}
+
+function readJson(value: string): unknown {
+  try { return JSON.parse(value); } catch { return undefined; }
 }
 
 const migrations = [
@@ -123,6 +128,8 @@ const migrations = [
    )`,
   `ALTER TABLE sidebar_settings ADD COLUMN project_color_display TEXT NOT NULL DEFAULT 'all'`,
   `ALTER TABLE sidebar_settings ADD COLUMN quick_action_keys TEXT NOT NULL DEFAULT '[]'`,
+  `ALTER TABLE sidebar_settings ADD COLUMN sidebar_layout TEXT NOT NULL DEFAULT '{}'`,
+  `ALTER TABLE sidebar_settings ADD COLUMN sidebar_quick_actions TEXT NOT NULL DEFAULT '["new-thread","new-project"]'`,
 ];
 
 export interface StoredLifecycleRow {
@@ -160,6 +167,8 @@ interface SidebarSettingsDbRow {
   project_colors_enabled: number;
   project_color_display: string;
   quick_action_keys: string;
+  sidebar_layout: string;
+  sidebar_quick_actions: string;
 }
 
 const threadIdSchema = z.object({ threadId: z.string().trim().min(1) });
@@ -243,6 +252,15 @@ const sidebarSettingsSchema = z
     dockShelves: z.boolean(),
     projectColorsEnabled: z.boolean(),
     projectColorDisplay: z.enum(PROJECT_COLOR_DISPLAYS),
+    layout: z.object({
+      density: z.enum(["compact", "standard", "spacious"]),
+      showProjectFilter: z.boolean(), showLocation: z.boolean(),
+      showProvider: z.boolean(), showPorts: z.boolean(),
+      quickActionLabels: z.boolean(), quickActionPlacement: z.enum(["top", "bottom"]),
+      rowActionsVisibility: z.enum(["hover", "always"]), holdToSelect: z.boolean(),
+    }).strict(),
+    sidebarQuickActions: z.array(z.enum(SIDEBAR_QUICK_ACTIONS)).max(2)
+      .refine(keys => new Set(keys).size === keys.length, "Choose each action once"),
     quickActionKeys: z.array(z.string().max(200).regex(/^[\w-]+\/[\w-]+$/))
       .max(MAX_QUICK_ACTIONS).refine(keys => new Set(keys).size === keys.length, "Choose each action once"),
   })
@@ -584,7 +602,7 @@ export default async function plugin(bb: BbPluginApi) {
                 auto_settle_after_days, auto_settle_on_merge,
                 child_sort_field, child_sort_direction, child_icon_style,
                 compact_working_threads, working_shelf, dock_shelves,
-                project_colors_enabled, project_color_display, quick_action_keys
+                project_colors_enabled, project_color_display, quick_action_keys, sidebar_layout, sidebar_quick_actions
            FROM sidebar_settings
           WHERE id = 1`,
       )
@@ -610,6 +628,8 @@ export default async function plugin(bb: BbPluginApi) {
           projectColorsEnabled: row.project_colors_enabled === 1,
           projectColorDisplay: projectColorDisplayOf(row.project_color_display),
           quickActionKeys: readQuickActionKeys(row.quick_action_keys),
+          layout: sidebarLayoutOf(readJson(row.sidebar_layout)),
+          sidebarQuickActions: sidebarQuickActionsOf(readJson(row.sidebar_quick_actions)),
         }
       : { ...DEFAULT_SIDEBAR_SETTINGS };
   };
@@ -622,8 +642,8 @@ export default async function plugin(bb: BbPluginApi) {
          auto_settle_after_days, auto_settle_on_merge,
          child_sort_field, child_sort_direction, child_icon_style,
          compact_working_threads, working_shelf, dock_shelves,
-         project_colors_enabled, project_color_display, quick_action_keys
-       ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         project_colors_enabled, project_color_display, quick_action_keys, sidebar_layout, sidebar_quick_actions
+       ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          snooze_presets = excluded.snooze_presets,
          inactive_threads_enabled = excluded.inactive_threads_enabled,
@@ -641,7 +661,9 @@ export default async function plugin(bb: BbPluginApi) {
          dock_shelves = excluded.dock_shelves,
          project_colors_enabled = excluded.project_colors_enabled,
          project_color_display = excluded.project_color_display,
-         quick_action_keys = excluded.quick_action_keys`,
+         quick_action_keys = excluded.quick_action_keys,
+         sidebar_layout = excluded.sidebar_layout,
+         sidebar_quick_actions = excluded.sidebar_quick_actions`,
     ).run(
       values.snoozePresets,
       values.inactiveThreadsEnabled ? 1 : 0,
@@ -659,6 +681,8 @@ export default async function plugin(bb: BbPluginApi) {
       values.projectColorsEnabled ? 1 : 0,
       values.projectColorDisplay,
       JSON.stringify(values.quickActionKeys),
+      JSON.stringify(values.layout),
+      JSON.stringify(values.sidebarQuickActions),
     );
   };
 
@@ -718,6 +742,8 @@ export default async function plugin(bb: BbPluginApi) {
         projectColorsEnabled: false,
         projectColorDisplay: DEFAULT_SIDEBAR_SETTINGS.projectColorDisplay,
         quickActionKeys: [],
+        layout: DEFAULT_SIDEBAR_SETTINGS.layout,
+        sidebarQuickActions: DEFAULT_SIDEBAR_SETTINGS.sidebarQuickActions,
       });
       if (hasLegacyValues && migrated.success) {
         writeSidebarSettings(migrated.data);
