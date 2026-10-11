@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
 import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
 import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
@@ -28,6 +28,25 @@ const rpc = {
   getSidebarSettings: () => ({ ...DEFAULT_SIDEBAR_SETTINGS, inactiveThreadsEnabled: false }),
   listLifecycle: () => ({ rows: [] }), listInboxOrder: () => ({ threadIds: rows.map(row => row.id) }),
 };
+
+it.each([[true, true], [true, false], [false, true], [false, false]])(
+  "configures row snooze and settle buttons independently: snooze=%s settle=%s",
+  async (showSnoozeButton, showSettleButton) => {
+    renderSlot(app.threadLists[0]!, props, {
+      sidebarThreads: { status: "ready", threads: rows, projects: [] },
+      rpc: { ...rpc, getSidebarSettings: () => ({
+        ...DEFAULT_SIDEBAR_SETTINGS, inactiveThreadsEnabled: false,
+        layout: { ...DEFAULT_SIDEBAR_SETTINGS.layout, showSnoozeButton, showSettleButton },
+      }) },
+    });
+    const row = (await screen.findByRole("link", { name: "thr_a" })).closest("li")!;
+    await waitFor(() => {
+      expect(!!within(row).queryByRole("combobox", { name: "Snooze thread" })).toBe(showSnoozeButton);
+      expect(!!within(row).queryByRole("button", { name: "Settle thread" })).toBe(showSettleButton);
+    });
+    expect(row.textContent).toContain("thr_a");
+  },
+);
 
 it("selects the visible range without navigation, extends in reverse, and clears with Escape", async () => {
   const slot = renderSlot(app.threadLists[0]!, { ...props, activeThreadId: "thr_a" }, {

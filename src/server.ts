@@ -256,6 +256,7 @@ const sidebarSettingsSchema = z
       density: z.enum(["compact", "standard", "spacious"]),
       showProjectFilter: z.boolean(), showLocation: z.boolean(),
       showProvider: z.boolean(), showPorts: z.boolean(),
+      showSnoozeButton: z.boolean().default(true), showSettleButton: z.boolean().default(true),
       quickActionLabels: z.boolean(), quickActionPlacement: z.enum(["top", "bottom"]),
       rowActionsVisibility: z.enum(["hover", "always"]), holdToSelect: z.boolean(),
     }).strict(),

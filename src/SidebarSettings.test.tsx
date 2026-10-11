@@ -164,8 +164,10 @@ it("autosaves layout choices and creation buttons together", async () => {
   vi.useFakeTimers();
   fireEvent.change(screen.getByRole("combobox", { name: "Thread spacing" }), { target: { value: "compact" } });
   fireEvent.click(screen.getByRole("switch", { name: "Provider icons" }));
+  fireEvent.click(screen.getByRole("switch", { name: "Snooze thread button" }));
+  fireEvent.click(screen.getByRole("switch", { name: "Settle thread button" }));
   fireEvent.change(screen.getByRole("combobox", { name: "Quick action placement" }), { target: { value: "bottom" } });
   fireEvent.change(screen.getByRole("combobox", { name: "Sidebar quick action 1" }), { target: { value: "" } });
   await act(async () => { await vi.advanceTimersByTimeAsync(500); });
-  expect(writes).toEqual([{ layout: { ...DEFAULT_SIDEBAR_SETTINGS.layout, density: "compact", showProvider: false, quickActionPlacement: "bottom" }, sidebarQuickActions: ["new-project"] }]);
+  expect(writes).toEqual([{ layout: { ...DEFAULT_SIDEBAR_SETTINGS.layout, density: "compact", showProvider: false, showSnoozeButton: false, showSettleButton: false, quickActionPlacement: "bottom" }, sidebarQuickActions: ["new-project"] }]);
 });

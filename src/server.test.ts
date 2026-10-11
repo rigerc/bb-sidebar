@@ -2829,7 +2829,7 @@ it("persists ordered quick actions and preserves them on unrelated settings edit
 
 it("persists layout and creation actions without resetting other preferences", async () => {
   const harness = await loadPlugin();
-  const layout = { ...DEFAULT_SIDEBAR_LAYOUT, density: "compact", showPorts: false, quickActionPlacement: "bottom" };
+  const layout = { ...DEFAULT_SIDEBAR_LAYOUT, density: "compact", showPorts: false, showSnoozeButton: false, showSettleButton: false, quickActionPlacement: "bottom" };
   await harness.behavior.callRpc("updateSidebarSettings", { layout, sidebarQuickActions: ["new-project", "new-thread"] });
   await harness.behavior.callRpc("updateSidebarSettings", { quickActionKeys: ["bb--core/pin"] });
   await expect(harness.behavior.callRpc("getSidebarSettings", {})).resolves.toMatchObject({
@@ -2839,4 +2839,8 @@ it("persists layout and creation actions without resetting other preferences", a
     await expect(harness.behavior.callRpc("updateSidebarSettings", input)).rejects.toThrow("rpc input validation failed");
   }
   await expect(harness.behavior.callRpc("updateSidebarSettings", { sidebarQuickActions: [] })).resolves.toMatchObject({ sidebarQuickActions: [], layout });
+  const { showSnoozeButton: _snooze, showSettleButton: _settle, ...legacyLayout } = layout;
+  await expect(harness.behavior.callRpc("updateSidebarSettings", { layout: legacyLayout })).resolves.toMatchObject({
+    layout: { ...layout, showSnoozeButton: true, showSettleButton: true },
+  });
 });

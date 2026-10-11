@@ -1461,6 +1461,8 @@ export function ThreadInbox({
       isWoke={wokeThreadIds.has(thread.id)}
       canPark={lifecycle.canPark(thread)}
       snoozePresets={snoozePresets}
+      showSnoozeButton={sidebarSettings?.layout.showSnoozeButton ?? true}
+      showSettleButton={sidebarSettings?.layout.showSettleButton ?? true}
       onNavigate={onNavigate}
       onRenamingChange={(editing) => {
         setRenamingShelfLocks((current) => {

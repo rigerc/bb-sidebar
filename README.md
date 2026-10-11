@@ -54,6 +54,10 @@ Choose compact, standard, or spacious thread spacing; toggle the project filter,
 branch and machine details, provider icons, and open port indicators. An active
 project filter remains visible so you can clear it.
 
+Toggle **Snooze thread button** and **Settle thread button** independently to hide
+either shortcut on thread rows. Both are shown by default. The thread context
+menu still offers these actions.
+
 **Thread row actions** configures up to four host/plugin actions beside each row.
 Choose whether they appear on hover or stay visible. Touch devices always show
 them. Choice actions open a picker; archive and delete retain bb's confirmation

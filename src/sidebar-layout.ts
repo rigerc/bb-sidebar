@@ -8,6 +8,8 @@ export interface SidebarLayout {
   showLocation: boolean;
   showProvider: boolean;
   showPorts: boolean;
+  showSnoozeButton: boolean;
+  showSettleButton: boolean;
   quickActionLabels: boolean;
   quickActionPlacement: "top" | "bottom";
   rowActionsVisibility: "hover" | "always";
@@ -17,6 +19,7 @@ export interface SidebarLayout {
 export const DEFAULT_SIDEBAR_LAYOUT: SidebarLayout = {
   density: "standard", showProjectFilter: true, showLocation: true,
   showProvider: true, showPorts: true, quickActionLabels: true,
+  showSnoozeButton: true, showSettleButton: true,
   quickActionPlacement: "top", rowActionsVisibility: "hover", holdToSelect: true,
 };
 

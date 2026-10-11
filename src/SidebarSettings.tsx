@@ -319,6 +319,8 @@ export function SidebarSettings() {
         <SettingRow title="Thread row action visibility" control={<SettingsSelect aria-label="Thread row action visibility" value={draft.layout.rowActionsVisibility} onChange={event => updateLayout("rowActionsVisibility", event.target.value as SidebarLayout["rowActionsVisibility"])}>
           <option value="hover">On hover or keyboard focus</option><option value="always">Always visible</option>
         </SettingsSelect>} />
+        <SettingRow title="Snooze thread button" description="Show the snooze shortcut on thread rows." control={<Switch label="Snooze thread button" checked={draft.layout.showSnoozeButton} onChange={value => updateLayout("showSnoozeButton", value)} />} />
+        <SettingRow title="Settle thread button" description="Show the settle shortcut on thread rows." control={<Switch label="Settle thread button" checked={draft.layout.showSettleButton} onChange={value => updateLayout("showSettleButton", value)} />} />
         <SettingRow title="Thread row actions" description="Choose up to four actions beside each thread. Actions from installed plugins are included.">
           <QuickActionSettings keys={draft.quickActionKeys} onChange={keys => update("quickActionKeys", keys)} />
         </SettingRow>

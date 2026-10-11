@@ -80,6 +80,8 @@ export function ThreadCard({
   isWoke,
   canPark,
   snoozePresets,
+  showSnoozeButton = true,
+  showSettleButton = true,
   onNavigate,
   onRenamingChange,
   onPark,
@@ -108,6 +110,8 @@ export function ThreadCard({
   /** False while the thread is working or blocked on the user. */
   canPark: boolean;
   snoozePresets: readonly ConfiguredSnoozePreset[];
+  showSnoozeButton?: boolean;
+  showSettleButton?: boolean;
   onNavigate: () => void;
   onRenamingChange?: (editing: boolean) => void;
   onPark?: () => void;
@@ -223,7 +227,8 @@ export function ThreadCard({
         ? "read-idle"
         : "active";
 
-  const showParkActions = !isWoke && canPark && (snoozePresets.length > 0 || !!onPark);
+  const showSnoozeAction = showSnoozeButton && (snoozePresets.length > 0 || !!onPark);
+  const showParkActions = !isWoke && canPark && (showSnoozeAction || showSettleButton);
   const unpinButton = thread.isPinned ? (
     <Tooltip label="Unpin thread">
       <button
@@ -501,19 +506,19 @@ export function ThreadCard({
                       )}
                     >
                       {unpinButton}
-                      <SnoozeSelect
+                      {showSnoozeAction ? <SnoozeSelect
                         label="Snooze thread"
                         snoozePresets={snoozePresets}
                         triggerClassName="h-5 w-5 border-0 px-0.5 py-0 shadow-none duration-200 ease-out hover:bg-transparent hover:duration-200 hover:text-[color:var(--bb-sidebar-snooze-active)] focus:ring-0 focus-visible:text-[color:var(--bb-sidebar-snooze-active)] data-[state=open]:text-[color:var(--bb-sidebar-snooze-active)] motion-reduce:transition-none [&>svg:last-child]:size-3"
                         onOpenChange={setIsSnoozeOpen}
                         onSnooze={onSnooze}
                         onPark={onPark}
-                      />
-                      <ParkButton
+                      /> : null}
+                      {showSettleButton ? <ParkButton
                         label="Settle thread"
                         settling={isSettling}
                         onActivate={startSettle}
-                      />
+                      /> : null}
                     </span>
                   ) : null}
                 </span>
