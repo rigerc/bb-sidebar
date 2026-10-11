@@ -281,3 +281,27 @@
 .bb-sidebar-project-monogram {
   background-color: color-mix(in oklab, var(--bb-sidebar-project) 20%, transparent);
 }
+
+/* Faces are interactive siblings of the click target, including full cards. */
+[data-bb-sidebar-root] [data-asciimoji-slot] {
+  position: relative;
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+
+[data-bb-sidebar-root] [data-thread-selected] {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+  background-color: var(--sidebar-accent);
+}
+
+@media (hover: hover) {
+  .bb-sidebar-quick-actions {
+    opacity: 0;
+  }
+  [data-thread-row]:hover .bb-sidebar-quick-actions,
+  [data-thread-row]:focus-within .bb-sidebar-quick-actions,
+  .bb-sidebar-quick-actions:has([data-state="open"]) {
+    opacity: 1;
+  }
+}

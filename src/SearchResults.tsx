@@ -1,10 +1,10 @@
+import { useThreadOperations } from "./useThreadOperations";
 import {
   useEffect,
   useRef,
   useState,
 } from "react";
 import {
-  experimental_useSidebarThreadActions as useSidebarThreadActions,
   experimental_useSidebarThreadSplit as useSidebarThreadSplit,
   type PluginSidebarThread,
 } from "@get-bb/plugin-sdk/app";
@@ -16,6 +16,7 @@ import { projectIconUrl } from "./project-icons";
 import { ThreadTitle } from "./ThreadTitle";
 import { OpenPortsIndicator } from "./OpenPorts";
 import { JumpHint, useJumpHint } from "./JumpHints";
+import { QuickActions } from "./QuickActions";
 
 /**
  * Search is a separate flat mode. A parked match must not disappear behind
@@ -141,13 +142,13 @@ function SearchResultRow({
   onAcknowledgeWake: () => void;
   onNavigate: () => void;
 }) {
-  const actions = useSidebarThreadActions();
+  const actions = useThreadOperations();
   const { splitProps, layout } = useSidebarThreadSplit(thread.id);
   const jumpHint = useJumpHint(thread.id);
   const title = threadDisplayTitle(thread);
 
   return (
-    <li role="presentation" className="list-none">
+    <li role="presentation" data-thread-row="" className="relative list-none">
       <a
         ref={anchorRef}
         id={`bb-sidebar-search-result-${thread.id}`}
@@ -159,6 +160,7 @@ function SearchResultRow({
         aria-selected={isHighlighted}
         aria-current={isActive ? "page" : undefined}
         aria-label={projectName ? `${title}, ${projectName}` : title}
+        aria-describedby={`bb-sidebar-search-details-${thread.id}`}
         {...splitProps}
         onFocus={onHighlight}
         onMouseMove={onHighlight}
@@ -168,8 +170,12 @@ function SearchResultRow({
           actions.open(thread.id, { split: false });
           onNavigate();
         }}
+        className="absolute inset-0 rounded-md outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      />
+      <div
+        id={`bb-sidebar-search-details-${thread.id}`}
         className={cn(
-          "rounded-md px-2.5 text-sm outline-none transition-colors",
+          "pointer-events-none rounded-md px-2.5 text-sm transition-colors",
           isWoke
             ? "grid h-11 grid-cols-[minmax(0,1fr)_auto] grid-rows-2 items-center gap-x-2"
             : "flex h-9 items-center gap-2",
@@ -204,9 +210,11 @@ function SearchResultRow({
         <span
           className={cn(
             STATUS_SLOT_CLASS,
+            "w-auto gap-1",
             isWoke && "col-start-2 row-span-2 row-start-1 w-auto gap-1",
           )}
         >
+          <QuickActions thread={thread} />
           {jumpHint ? (
             <JumpHint label={jumpHint} />
           ) : (
@@ -220,7 +228,7 @@ function SearchResultRow({
             </>
           )}
         </span>
-      </a>
+      </div>
     </li>
   );
 }

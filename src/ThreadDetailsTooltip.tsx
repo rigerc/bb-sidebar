@@ -1,9 +1,9 @@
+import { useThreadOperations } from "./useThreadOperations";
 import { useEffect, useId, useState, type ReactElement } from "react";
 import {
   experimental_useProviders as useProviders,
   experimental_useSidebarThreadSplit,
   experimental_useSidebarThreads as useSidebarThreads,
-  experimental_useSidebarThreadActions as useSidebarThreadActions,
   useRpc,
   useRealtime,
   type PluginSidebarThread,
@@ -33,7 +33,7 @@ export function ThreadDetailsTooltip({
 }) {
   const { providers } = useProviders();
   const { projects, threads } = useSidebarThreads();
-  const actions = useSidebarThreadActions();
+  const actions = useThreadOperations();
   const { call } = useRpc<typeof bbSidebarRpcContract>();
   const [iconRevision, setIconRevision] = useState(0);
   useRealtime(PROJECT_ICONS_CHANNEL, () => {

@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { experimental_useSidebarThreadActions as useSidebarThreadActions, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useThreadOperations } from "./useThreadOperations";
 import { Icon } from "./components/Icon";
 import { usePortalScopeProps } from "./lib/portal-scope";
 import type { bbSidebarRpcContract, SettledCleanupPreview, SettledCleanupResult } from "./server";
 
 export function CleanSettledDialog({ threadIds, onNavigate }: { threadIds: string[]; onNavigate: () => void }) {
   const rpc = useRpc<typeof bbSidebarRpcContract>();
-  const threadActions = useSidebarThreadActions();
+  const threadActions = useThreadOperations();
   const portalScope = usePortalScopeProps();
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<SettledCleanupPreview | null>(null);

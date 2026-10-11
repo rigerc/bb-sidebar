@@ -4,11 +4,15 @@
 
 ### Added
 
+- Up to four configurable sidebar quick buttons, using bb's registered thread actions and plugin choice pickers.
+- Shift-click range selection, Ctrl/Cmd-click toggles, keyboard selection, and bulk pin, unpin, read/unread, park, and settle controls.
+- Asciimoji-compatible title placement in full cards, compact rows, search results, and visible sidebar descendants.
 - Optional project colors, disabled by default. Each project gets an automatic color based on its ID, with a custom color picker and reset control in Settings > Project appearance. Project groups share one continuous stripe; ungrouped rows have their own stripe.
 - While project colors are enabled, all project names stay colored. Show stripes in full and collapsed mode, full mode only, or grouped projects only when sorting by Project.
 
 ### Changed
 
+- Replaced the removed sidebar operations hook with SDK thread writes and navigation; archive continues through bb's confirmed host action.
 - Grouped settings by sidebar layout, project appearance, thread behavior, child threads, and device. Section links jump to each group; project removal has its own management section at the bottom.
 - Settling a parent also settles its descendants, and waits until the whole tree is idle. New or resumed child activity reopens its ancestors.
 - The Settled Clean button is now labelled "Close terminals and ports of settled threads": it never archived anything.

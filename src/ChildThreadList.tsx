@@ -21,6 +21,7 @@ import { threadDisplayTitle } from "./inbox";
 import { canParkThread } from "./lifecycle";
 import { RowContextMenu } from "./RowContextMenu";
 import { InlineThreadTitle } from "./InlineThreadTitle";
+import { QuickActions } from "./QuickActions";
 import { ThreadDetailsTooltip } from "./ThreadDetailsTooltip";
 import { OpenPortsIndicator } from "./OpenPorts";
 import {
@@ -445,6 +446,7 @@ function ChildThreadRow({
     >
       <div
         data-child-thread-row=""
+        data-thread-row={variant === "sidebar" ? "" : undefined}
         data-active={isActive ? "true" : undefined}
         className={cn(
           "flex w-full items-center rounded-md text-left",
@@ -473,6 +475,7 @@ function ChildThreadRow({
         <ThreadDetailsTooltip thread={thread} disabled={isRenaming}>
           <RowAction
             data-child-thread-id={thread.id}
+            data-sidebar-thread-id={variant === "sidebar" && !isRenaming ? thread.id : undefined}
             type={isRenaming ? undefined : "button"}
             aria-label={
               isRenaming
@@ -561,6 +564,7 @@ function ChildThreadRow({
             ) : null}
           </RowAction>
         </ThreadDetailsTooltip>
+        {variant === "sidebar" ? <QuickActions thread={thread} onRename={() => setIsRenaming(true)} /> : null}
         {disclosure ? (
           <GrandchildDisclosureButton title={title} {...disclosure} />
         ) : null}

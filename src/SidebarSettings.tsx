@@ -20,6 +20,7 @@ import {
 import { ProjectAppearanceSettings } from "./ProjectSettings";
 import { ProjectManagement } from "./ProjectManagement";
 import { PortLinkSettings } from "./PortLinkSettings";
+import { QuickActionSettings } from "./QuickActions";
 import {
   configuredSnoozePresetError,
   parseConfiguredSnoozePresets,
@@ -89,6 +90,7 @@ const SECTION_BY_SETTING: Record<keyof SidebarSettingsValues, string> = {
   dockShelves: "Sidebar layout",
   projectColorsEnabled: "Project appearance",
   projectColorDisplay: "Project appearance",
+  quickActionKeys: "Sidebar layout",
 };
 
 const validHours = (value: number) => Number.isInteger(value) && value >= MIN_INACTIVE_AFTER_HOURS && value <= MAX_INACTIVE_AFTER_HOURS;
@@ -282,6 +284,9 @@ export function SidebarSettings() {
     <div className="max-w-3xl space-y-8 pb-4">
       <SettingsNavigation sections={SETTINGS_SECTIONS} />
       <SettingsSection title="Sidebar layout" status={statusFor("Sidebar layout")}>
+        <SettingRow title="Sidebar quick buttons" description="Choose up to four thread actions, in order. Actions from installed plugins are included. Changes save automatically.">
+          <QuickActionSettings keys={draft.quickActionKeys} onChange={keys => update("quickActionKeys", keys)} />
+        </SettingRow>
         <SettingRow
           title="Compact working threads"
           experimental

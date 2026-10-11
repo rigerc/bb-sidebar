@@ -1,6 +1,6 @@
+import { useThreadOperations } from "./useThreadOperations";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  experimental_useSidebarThreadActions as useSidebarThreadActions,
   type PluginSidebarThread,
 } from "@get-bb/plugin-sdk/app";
 import { cn } from "./lib/utils";
@@ -19,7 +19,7 @@ export function InlineThreadTitle({
   onEditingChange: (editing: boolean) => void;
   className?: string;
 }) {
-  const actions = useSidebarThreadActions();
+  const actions = useThreadOperations();
   const title = threadDisplayTitle(thread);
   const [draft, setDraft] = useState(title);
   const finished = useRef(false);

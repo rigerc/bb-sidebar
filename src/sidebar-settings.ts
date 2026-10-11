@@ -37,6 +37,8 @@ export interface SidebarSettingsValues {
   projectColorsEnabled: boolean;
   /** Where project stripes appear; enabled project names are always colored. */
   projectColorDisplay: ProjectColorDisplay;
+  /** Ordered host/plugin action keys shown beside each sidebar row. */
+  quickActionKeys: string[];
 }
 
 import { safeSetItem } from "./lib/safe-storage";
@@ -58,7 +60,16 @@ export const DEFAULT_SIDEBAR_SETTINGS: SidebarSettingsValues = {
   dockShelves: false,
   projectColorsEnabled: false,
   projectColorDisplay: "all",
+  quickActionKeys: [],
 };
+
+export const MAX_QUICK_ACTIONS = 4;
+export function quickActionKeysOf(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((key): key is string =>
+    typeof key === "string" && key.length <= 200 && /^[\w-]+\/[\w-]+$/.test(key),
+  ))].slice(0, MAX_QUICK_ACTIONS);
+}
 
 export function childThreadSortOf(
   settings: SidebarSettingsValues | null,
@@ -121,9 +132,9 @@ const settingsByRpcClient = new WeakMap<object, SidebarSettingsValues>();
 // Old previews may have cached removed settings. Never forward unknown keys
 // from storage (or an older server response) to the strict settings RPC.
 function currentSettingsOnly(value: SidebarSettingsValues): SidebarSettingsValues {
-  return Object.fromEntries(Object.keys(DEFAULT_SIDEBAR_SETTINGS).map((key) => [
+  return { ...Object.fromEntries(Object.keys(DEFAULT_SIDEBAR_SETTINGS).map((key) => [
     key, value[key as keyof SidebarSettingsValues] ?? DEFAULT_SIDEBAR_SETTINGS[key as keyof SidebarSettingsValues],
-  ])) as unknown as SidebarSettingsValues;
+  ])) as unknown as SidebarSettingsValues, quickActionKeys: quickActionKeysOf(value.quickActionKeys) };
 }
 
 function readStoredSidebarSettings(): SidebarSettingsValues | null {

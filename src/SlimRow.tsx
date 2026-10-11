@@ -1,6 +1,6 @@
+import { useThreadOperations } from "./useThreadOperations";
 import { useState } from "react";
 import {
-  experimental_useSidebarThreadActions as useSidebarThreadActions,
   type PluginSidebarThread,
 } from "@get-bb/plugin-sdk/app";
 import { Icon } from "./components/Icon";
@@ -12,6 +12,7 @@ import { threadDisplayTitle } from "./inbox";
 import { snoozeWakeLabel } from "./lifecycle";
 import type { ConfiguredSnoozePreset } from "./lifecycle";
 import { InlineThreadTitle } from "./InlineThreadTitle";
+import { QuickActions } from "./QuickActions";
 import { ProjectFavicon, ProjectStripe } from "./ProjectFavicon";
 import { useProjectColor } from "./ProjectColors";
 import { ThreadDetailsTooltip } from "./ThreadDetailsTooltip";
@@ -56,7 +57,7 @@ export function SlimRow({
   onRestore: () => void;
   onSnooze: (snoozedUntil: number) => void;
 }) {
-  const actions = useSidebarThreadActions();
+  const actions = useThreadOperations();
   const projectColor = useProjectColor(thread.projectId);
   const jumpHint = useJumpHint(thread.id);
   const title = threadDisplayTitle(thread);
@@ -78,6 +79,7 @@ export function SlimRow({
     >
       <li className="list-none">
         <div
+          data-thread-row=""
           className={cn(
             "group/slim relative flex h-8 items-center gap-2 rounded-md px-2.5 text-xs transition-colors duration-150 ease-out motion-reduce:transition-none",
             isActive ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/60",
@@ -151,6 +153,7 @@ export function SlimRow({
             />
           </span>
           <OpenPortsIndicator thread={thread} />
+          <QuickActions thread={thread} onRename={() => setIsRenaming(true)} />
           {/* Size to the label so the port icon stays beside it. Keep enough
               room for the restore button, which replaces the label on hover.
               On touch devices, show both side by side. */}

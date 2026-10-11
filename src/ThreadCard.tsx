@@ -1,3 +1,4 @@
+import { useThreadOperations } from "./useThreadOperations";
 import {
   useId,
   useLayoutEffect,
@@ -10,7 +11,6 @@ import {
 import {
   experimental_useSidebarThreadPullRequest as useSidebarThreadPullRequest,
   experimental_useSidebarThreadSplit as useSidebarThreadSplit,
-  experimental_useSidebarThreadActions as useSidebarThreadActions,
   type PluginSidebarThread,
 } from "@get-bb/plugin-sdk/app";
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ import { STATUS_SLOT_CLASS, StatusOrTime, threadShortStatus } from "./StatusSlot
 import { CompactLiveStatus } from "./StatusGlyph";
 import { threadDisplayTitle } from "./inbox";
 import { InlineThreadTitle } from "./InlineThreadTitle";
+import { QuickActions } from "./QuickActions";
 import type { ConfiguredSnoozePreset } from "./lifecycle";
 import { isWorkingTree } from "./working-tree";
 import { ProjectFavicon, ProjectStripe } from "./ProjectFavicon";
@@ -125,7 +126,7 @@ export function ThreadCard({
   /** Quantized clock, so every card in one render agrees on "now". */
   now: number;
 }) {
-  const actions = useSidebarThreadActions();
+  const actions = useThreadOperations();
   const jumpHint = useJumpHint(thread.id);
   const { splitProps, layout } = useSidebarThreadSplit(thread.id);
   const rowRef = useRef<HTMLLIElement>(null);
@@ -255,7 +256,7 @@ export function ThreadCard({
       data-row-emphasis={emphasis}
       data-settle-fade=""
       className={cn(
-        "pointer-events-none relative truncate text-sm",
+        "pointer-events-none relative flex min-w-0 items-center gap-1.5 text-sm",
         showProject ? "mt-0.5" : "min-w-0 flex-1",
         isRenaming && "pointer-events-auto",
         emphasis === "read-idle" ? "text-muted-foreground" : "text-foreground",
@@ -266,6 +267,7 @@ export function ThreadCard({
         thread={thread}
         editing={isRenaming}
         onEditingChange={changeRenaming}
+        className="min-w-0 flex-1 truncate"
       />
     </div>
   );
@@ -294,6 +296,7 @@ export function ThreadCard({
         <div data-drag-visual="">
           <div
             data-parent-card=""
+            data-thread-row=""
             data-settling={isSettling ? "" : undefined}
             className={cn(
               "group/card relative rounded-md px-2.5 transition-colors duration-150 ease-out motion-reduce:transition-none",
@@ -385,6 +388,7 @@ export function ThreadCard({
                   />
                 </span>
                 <span className="pointer-events-none relative flex shrink-0 items-center gap-1.5">
+                  <QuickActions thread={thread} onRename={() => changeRenaming(true)} />
                   <OpenPortsIndicator thread={thread} />
                   {childThreads.length > 0 ? (
                     <ChildThreadBadge
@@ -435,6 +439,7 @@ export function ThreadCard({
               )}
               {/* bb's own rows trade their trailing status for the shortcut
                   while the modifier is held; these do the same. */}
+              <QuickActions thread={thread} onRename={() => changeRenaming(true)} />
               {jumpHint ? (
                 <span className={cn(STATUS_SLOT_CLASS, "w-auto")}>
                   <JumpHint label={jumpHint} />

@@ -1,5 +1,5 @@
+import { useThreadOperations } from "./useThreadOperations";
 import {
-  experimental_useSidebarThreadActions as useSidebarThreadActions,
   experimental_useSidebarThreads as useSidebarThreads,
   type PluginThreadHeaderActionProps,
 } from "@get-bb/plugin-sdk/app";
@@ -22,7 +22,7 @@ export function ParentChip({
   isCompactViewport,
 }: PluginThreadHeaderActionProps) {
   const { threads } = useSidebarThreads();
-  const actions = useSidebarThreadActions();
+  const actions = useThreadOperations();
 
   const parent = parentOf(threads, threadId);
   if (parent === null) return null;

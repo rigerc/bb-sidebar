@@ -1,3 +1,4 @@
+import { renderSlot } from "./test-sidebar";
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import {
@@ -8,7 +9,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
 import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
 import { idleSidebarThreadFields } from "./test-fixtures";
 import { DEFAULT_SNOOZE_PRESET_CONFIG, formatSnoozeWakeTime } from "./lifecycle";
@@ -2890,18 +2891,12 @@ describe("ThreadInbox", () => {
     }
   });
 
-  it("opens a thread normally when the platform modifier is held", () => {
+  it("selects a thread without opening it when the platform modifier is held", () => {
     const rendered = render([thread({ id: "thr_modifier" })]);
     fireEvent.click(screen.getByRole("link"), { metaKey: true });
 
-    expect(rendered.sidebarActionCalls).toContainEqual({
-      method: "open",
-      threadId: "thr_modifier",
-      options: { split: false },
-    });
-    expect(
-      screen.queryByRole("toolbar", { name: /threads selected/ }),
-    ).toBeNull();
+    expect(rendered.sidebarActionCalls).toEqual([]);
+    expect(screen.getByRole("region", { name: "Selected threads" }).textContent).toContain("1 selected");
   });
 
   it("keeps a separate collapsible Pinned shelf above Active", () => {
@@ -4583,7 +4578,7 @@ describe("ThreadInbox", () => {
     );
 
     const result = await screen.findByRole("option", { name: /Match plain/ });
-    const project = within(result).getByText("A very long project name")
+    const project = within(result.closest<HTMLElement>("[data-thread-row]")!).getByText("A very long project name")
       .parentElement!;
     expect(project.className).toContain("max-w-[30%]");
     expect(project.className.split(" ")).not.toContain("max-w-28");
@@ -4661,9 +4656,9 @@ describe("ThreadInbox", () => {
     await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(4));
     for (const [title, status] of expected) {
       const result = screen.getByRole("option", { name: new RegExp(title) });
-      expect(within(result).getByText("Woke")).toBeDefined();
-      expect(within(result).getByText(status)).toBeDefined();
-      expect(within(result).queryByRole("button")).toBeNull();
+      expect(within(result.closest<HTMLElement>("[data-thread-row]")!).getByText("Woke")).toBeDefined();
+      expect(within(result.closest<HTMLElement>("[data-thread-row]")!).getByText(status)).toBeDefined();
+      expect(within(result.closest<HTMLElement>("[data-thread-row]")!).queryByRole("button")).toBeNull();
     }
 
     fireEvent.click(screen.getByRole("option", { name: /Match runtime/ }));
@@ -4730,16 +4725,16 @@ describe("ThreadInbox", () => {
     await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(2));
     const options = screen.getAllByRole("option");
     const woke = options.find(
-      (option) => within(option).queryByText("Woke") !== null,
+      (option) => within(option.closest<HTMLElement>("[data-thread-row]")!).queryByText("Woke") !== null,
     )!;
     const plain = options.find((option) => option !== woke)!;
     // Woke, the real status, and the project all keep their place on the row.
-    expect(within(woke).getByText("Failed")).toBeDefined();
-    expect(within(woke).getByText("bb")).toBeDefined();
-    expect(within(plain).getByText("31m")).toBeDefined();
-    expect(within(plain).queryByText("Woke")).toBeNull();
+    expect(within(woke.closest<HTMLElement>("[data-thread-row]")!).getByText("Failed")).toBeDefined();
+    expect(within(woke.closest<HTMLElement>("[data-thread-row]")!).getByText("bb")).toBeDefined();
+    expect(within(plain.closest<HTMLElement>("[data-thread-row]")!).getByText("31m")).toBeDefined();
+    expect(within(plain.closest<HTMLElement>("[data-thread-row]")!).queryByText("Woke")).toBeNull();
     // Woke is text in search, not a control: an option must not nest one.
-    expect(within(woke).queryByRole("button")).toBeNull();
+    expect(within(woke.closest<HTMLElement>("[data-thread-row]")!).queryByRole("button")).toBeNull();
     expect(nestedInteractiveControls(woke)).toEqual([]);
 
     const next = options[(options.indexOf(woke) + 1) % options.length]!;
@@ -4799,8 +4794,8 @@ describe("ThreadInbox", () => {
     );
 
     const result = await screen.findByRole("option", { name: "Orphan match" });
-    expect(within(result).getByText("Woke")).toBeDefined();
-    expect(within(result).getByText("Unread")).toBeDefined();
+    expect(within(result.closest<HTMLElement>("[data-thread-row]")!).getByText("Woke")).toBeDefined();
+    expect(within(result.closest<HTMLElement>("[data-thread-row]")!).getByText("Unread")).toBeDefined();
   });
 
   // The slot renders one status, and a raised hand outranks the runtime bb
@@ -4834,11 +4829,11 @@ describe("ThreadInbox", () => {
     );
 
     const result = await screen.findByRole("option", { name: /Asking match/ });
-    expect(within(result).getByText("Needs you")).toBeDefined();
-    expect(within(result).queryByText(/^Working/)).toBeNull();
+    expect(within(result.closest<HTMLElement>("[data-thread-row]")!).getByText("Needs you")).toBeDefined();
+    expect(within(result.closest<HTMLElement>("[data-thread-row]")!).queryByText(/^Working/)).toBeNull();
     // The runtime's own label must not outlive the status it was replaced by.
-    expect(within(result).getByLabelText("Needs you")).toBeDefined();
-    expect(within(result).queryByLabelText("Agent is working")).toBeNull();
+    expect(within(result.closest<HTMLElement>("[data-thread-row]")!).getByLabelText("Needs you")).toBeDefined();
+    expect(within(result.closest<HTMLElement>("[data-thread-row]")!).queryByLabelText("Agent is working")).toBeNull();
   });
 
   it("keeps project scope active while searching", async () => {

@@ -1,7 +1,8 @@
+import { useThreadOperations } from "./useThreadOperations";
 import { useRef, useState, type ReactNode } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import {
-  experimental_useSidebarThreadActions as useSidebarThreadActions,
+  experimental_useThreadActions as useThreadActions,
   experimental_useSidebarThreads as useSidebarThreads,
   useRpc,
   type PluginSidebarThread,
@@ -22,13 +23,14 @@ import {
   type ConfiguredSnoozePreset,
 } from "./lifecycle";
 import { beginTitleGeneration, finishTitleGeneration, useTitleGenerating } from "./title-generation-state";
+import { threadActionTarget } from "./useThreadOperations";
 
 /**
  * This sidebar's own right-click menu.
  *
- * The plugin API ships no menu component on purpose, so a replaced sidebar
- * owns this surface. Native actions use
- * `experimental_useSidebarThreadActions`. The destructive one goes through
+ * The sidebar owns this lifecycle menu. Native writes use the SDK and
+ * archive runs the host's registered action so bb owns confirmation.
+ * The destructive action goes through
  * this sidebar's own confirmation, which names the thread and project, and
  * then the plugin's `deleteThread` rpc; nothing deletes a subtree silently.
  */
@@ -59,7 +61,9 @@ export function RowContextMenu({
   onWake?: () => void;
   onRename?: () => void;
 }) {
-  const actions = useSidebarThreadActions();
+  const actions = useThreadOperations();
+  // Host actions retain bb's archive confirmation and pane cleanup.
+  const hostActions = useThreadActions(threadActionTarget(thread), { keys: ["bb--core/archive"] });
   const { projects, threads } = useSidebarThreads();
   const project = projects.find((project) => project.id === thread.projectId);
   const portalScope = usePortalScopeProps();
@@ -72,7 +76,9 @@ export function RowContextMenu({
   // session loaded. Release them alongside the archive. Working children are
   // skipped, so this never interrupts a turn archive itself would not.
   const archive = () => {
-    actions.archive(thread.id);
+    const action = hostActions.find(entry => entry.key === "bb--core/archive")?.action;
+    if (!action || action.disabled) return;
+    void action.run();
     const threadIds = [
       thread.id,
       ...threads

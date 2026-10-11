@@ -1,3 +1,4 @@
+import { useThreadOperations } from "./useThreadOperations";
 import {
   useCallback,
   useEffect,
@@ -7,7 +8,6 @@ import {
   useState,
 } from "react";
 import {
-  experimental_useSidebarThreadActions as useSidebarThreadActions,
   experimental_useSidebarThreads as useSidebarThreads,
   experimental_useProviders as useProviders,
   type PluginSidebarThread,
@@ -33,6 +33,8 @@ import { ProjectFavicon, ProjectStripe } from "./ProjectFavicon";
 import { ProjectColorsProvider, useProjectColor } from "./ProjectColors";
 import { ThreadCard, type ThreadReorderControls } from "./ThreadCard";
 import { SlimRow } from "./SlimRow";
+import { QuickActionsContext } from "./QuickActions";
+import { ThreadSelection } from "./ThreadSelection";
 import { CleanSettledDialog } from "./CleanSettledDialog";
 import { SearchResults } from "./SearchResults";
 import { childThreadsByParent, collapsedChildThreads } from "./ChildThreadList";
@@ -478,7 +480,7 @@ export function ThreadInbox({
   const { status, threads, projects } = useSidebarThreads();
   const workingSince = useWorkingSince(threads);
   const { providers } = useProviders();
-  const actions = useSidebarThreadActions();
+  const actions = useThreadOperations();
   const { values: legacySettings } = useSettings();
   const sidebarSettings = useSidebarSettings();
   const lifecycle = useLifecycle(threads);
@@ -1507,6 +1509,8 @@ export function ThreadInbox({
     <ChildThreadDisplayContext.Provider value={childDisplay}>
     <OpenPortsProvider>
     <JumpHintsContext.Provider value={jumpHints}>
+    <QuickActionsContext.Provider value={sidebarSettings?.quickActionKeys ?? DEFAULT_SIDEBAR_SETTINGS.quickActionKeys}>
+    <ThreadSelection threads={threads} lifecycle={lifecycle} activeThreadId={activeThreadId} onNavigate={onNavigate}>
       <div ref={jumpHintsRootRef} data-bb-sidebar-root="" className="flex min-h-0 flex-1 flex-col">
         {/* The one control the host has no equivalent for. Everything else in
             the chrome above — New thread, search — is bb's and stays bb's. */}
@@ -1785,6 +1789,8 @@ export function ThreadInbox({
           )}
         </div>
       </div>
+    </ThreadSelection>
+    </QuickActionsContext.Provider>
     </JumpHintsContext.Provider>
     </OpenPortsProvider>
     </ChildThreadDisplayContext.Provider>

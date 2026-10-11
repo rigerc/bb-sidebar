@@ -567,6 +567,7 @@ describe("lifecycle RPC", () => {
       dockShelves: false,
       projectColorsEnabled: false,
       projectColorDisplay: "all",
+      quickActionKeys: [],
     });
     await expect(
       harness.behavior.callRpc("updateSidebarSettings", {
@@ -602,6 +603,7 @@ describe("lifecycle RPC", () => {
       dockShelves: true,
       projectColorsEnabled: true,
       projectColorDisplay: "grouped",
+      quickActionKeys: [],
     });
     // A client that predates the setting leaves it out and must not reset it.
     await expect(
@@ -714,6 +716,7 @@ describe("lifecycle RPC", () => {
       dockShelves: false,
       projectColorsEnabled: false,
       projectColorDisplay: "all",
+      quickActionKeys: [],
     });
   });
 
@@ -2802,4 +2805,17 @@ describe("release lifecycle safety", () => {
     expect(await h.behavior.callRpc("updateSidebarSettings", { childSortDirection: "descending" })).toMatchObject({ workingShelf: true, childSortDirection: "descending" });
     await expect(h.behavior.callRpc("updateSidebarSettings", { archivedShelfEnabled: true })).rejects.toThrow("validation");
   });
+});
+
+it("persists ordered quick actions and preserves them on unrelated settings edits", async () => {
+  const harness = await loadPlugin();
+  const quickActionKeys = ["bb--core/pin", "push-notifications/notifications"];
+  await expect(harness.behavior.callRpc("updateSidebarSettings", { quickActionKeys }))
+    .resolves.toMatchObject({ quickActionKeys });
+  await harness.behavior.callRpc("updateSidebarSettings", { inactiveThreadsEnabled: false });
+  await expect(harness.behavior.callRpc("getSidebarSettings", {})).resolves.toMatchObject({ quickActionKeys });
+  for (const invalid of [["bad"], ["p/a", "p/a"], ["p/a", "p/b", "p/c", "p/d", "p/e"]]) {
+    await expect(harness.behavior.callRpc("updateSidebarSettings", { quickActionKeys: invalid }))
+      .rejects.toThrow("rpc input validation failed");
+  }
 });

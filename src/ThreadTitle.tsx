@@ -12,11 +12,11 @@ export function ThreadTitle({
   className?: string;
 }) {
   const generating = useTitleGenerating(threadId);
-  if (!generating) return <span className={className}>{title}</span>;
+  if (!generating) return <span className={cn("bb-thread-title", className)}>{title}</span>;
   return (
     <span
       className={cn(
-        "inline-flex min-w-0 max-w-full items-center gap-1.5",
+        "bb-thread-title inline-flex min-w-0 max-w-full items-center gap-1.5",
         className,
       )}
     >

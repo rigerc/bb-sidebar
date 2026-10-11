@@ -14,6 +14,9 @@ A stable thread list for [bb](https://github.com/get-bb/bb). Threads stay where 
 - Subtle project grouping for projects with multiple active threads
 - Pinned, Active, Inactive, Snoozed, Parked, and Settled shelves
 - Project filtering
+- Configurable sidebar quick buttons, including actions from installed plugins
+- Shift-click range selection, Ctrl/Cmd-click individual selection, and bulk pin, read/unread, park, and settle actions
+- Asciimoji faces and pickers beside sidebar titles when the Asciimoji plugin is enabled
 - Optional project colors with per-project color selection. Names stay colored in every mode; show stripes in full and collapsed mode, full mode only, or grouped projects only
 - Automatic project icons with custom overrides
 - Expandable child-thread indicators with running and attention states
@@ -29,10 +32,33 @@ A stable thread list for [bb](https://github.com/get-bb/bb). Threads stay where 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/yusuf8834/bb-sidebar.git
+bb plugin install git:https://github.com/rigerc/bb-sidebar.git@feat/sidebar-quick-actions-multiselect-asciimoji
 ```
 
 Then choose **BB Sidebar** under **Settings > Appearance > Sidebar**.
+
+This fork requires bb 0.46.0 or newer. If the upstream sidebar is already installed,
+bb will require you to remove it before switching sources; removing it clears its
+plugin-owned shelf and ordering settings.
+
+## Quick buttons and selection
+
+Under **Settings > Plugins > BB Sidebar > Sidebar layout**, choose up to four
+**Sidebar quick buttons**. Their order is saved automatically. Buttons appear on
+hover or keyboard focus on desktop and stay visible on touch devices. Choice
+actions such as Notifications open a picker; archive and delete retain bb's
+confirmation dialogs. Unavailable plugin actions are skipped until their plugin
+is enabled again.
+
+Click a thread, then hold **Shift** and click another to select the visible range.
+**Ctrl/Cmd-click** toggles individual threads; **Ctrl/Cmd-Shift-click** adds a range.
+With a thread focused, **Shift+Enter** or **Shift+Space** selects a range. The bulk
+toolbar shows the selection count; **Escape** clears it. Collapsed shelves and
+filtered-out threads are excluded. Park and Settle are available only when every
+selected thread is idle, and failed actions leave their threads selected for retry.
+
+Enable sidebar faces in the **Asciimoji** plugin's settings to show its animated
+faces and face picker beside titles. Asciimoji remains optional.
 
 ## Development
 

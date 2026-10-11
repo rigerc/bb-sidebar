@@ -7,15 +7,15 @@
   "author": "Yusuf Akbulut",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yusuf8834/bb-sidebar.git"
+    "url": "git+https://github.com/rigerc/bb-sidebar.git"
   },
-  "homepage": "https://github.com/yusuf8834/bb-sidebar#readme",
+  "homepage": "https://github.com/rigerc/bb-sidebar#readme",
   "bugs": {
-    "url": "https://github.com/yusuf8834/bb-sidebar/issues"
+    "url": "https://github.com/rigerc/bb-sidebar/issues"
   },
   "engines": {
-    "bb": ">=0.42.0",
-    "bbPluginSdk": ">=0.6.5"
+    "bb": ">=0.46.0",
+    "bbPluginSdk": ">=0.6.37"
   },
   "bb": {
     "name": "BB Sidebar",
@@ -57,7 +57,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.15",
+    "@get-bb/plugin-sdk": "0.6.37",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
